@@ -46,16 +46,23 @@ Represents the period being summarized (FR-001, FR-015).
 Identifies a specific release for header metadata and re-run detection
 (FR-011, FR-012, FR-013).
 
-| Field | Type | Notes |
-|---|---|---|
-| `release_name` | str | Human-readable name shown in the document header |
-| `version` | str | The version/tag used as the matching key (FR-012) |
-| `rc_branch` | str \| None | Release-candidate branch name, if applicable to how the window was specified |
-| `commit_sha` | str | The commit the notes were generated from |
+| Field | Type | Notes | Source |
+|---|---|---|---|
+| `release_name` | str | Human-readable name shown in the document header | Explicit user input: `--release-name` (required when `--publish` is used, FR-019) |
+| `version` | str | The version/tag used as the matching key (FR-012) | Explicit user input: `--version` (required when `--publish` is used, FR-019) |
+| `rc_branch` | str \| None | Release-candidate branch name, if applicable to how the window was specified | Explicit user input: `--rc-branch` (optional, may be omitted) |
+| `commit_sha` | str | The commit the notes were generated from | Always auto-resolved from the Time Window's `resolved_end`/end ref — never user-supplied |
 
-**Validation**: `version` is the sole identity/matching key — two runs with
-the same `version` refer to the same release for immutability purposes
-(FR-012), regardless of whether `rc_branch`/`commit_sha` differ.
+**Validation**:
+- `version` is the sole identity/matching key — two runs with the same
+  `version` refer to the same release for immutability purposes (FR-012),
+  regardless of whether `rc_branch`/`commit_sha` differ.
+- A release in *any* state (draft or published) matching `version` counts
+  as "existing" for FR-012 — a draft is not treated as available to
+  overwrite.
+- `--version` and `--release-name` MUST be present when `--publish` is
+  used; their absence in that case is a usage error, not a default-filled
+  value.
 
 ## Generated Summary
 
@@ -85,7 +92,11 @@ One Anthropic API call's cost-transparency data (FR-007), appended to
 | `since` / `until` | date | Resolved window boundaries |
 | `model` | str | |
 | `input_tokens` / `output_tokens` | int | From the Anthropic response's `usage` field |
-| `estimated_cost_usd` | float | Computed via the static pricing table (see research.md) |
+| `estimated_cost_usd` | float | Computed via the static pricing table (see research.md); stored with 6 decimal places of precision |
+
+**Validation**: `estimated_cost_usd` is stored at 6 decimal places of
+precision in `usage_log.jsonl`; when printed to the user in the run's cost
+summary, it is displayed rounded to 4 decimal places.
 
 ## Summarization History
 

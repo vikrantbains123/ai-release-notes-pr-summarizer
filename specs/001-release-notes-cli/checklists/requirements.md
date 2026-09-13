@@ -66,3 +66,11 @@
   generated files. The other 5 findings were fixed in tasks.md,
   contracts/cli-interface.md, and research.md rather than spec.md itself.
   Re-validated; still passes all items.
+- Full review of the remaining 16 `pre-implementation.md` items (2026-09-12,
+  before `/speckit-implement` began) resolved all of them: 6 were already
+  adequate (reviewed, no change), 8 got a small precision/wording fix, and
+  2 were real design decisions (draft-release matching; how Release
+  Identity's fields get populated) resolved with the user's input, adding
+  new **FR-019** (explicit `--version`/`--release-name`/`--rc-branch`
+  flags). `pre-implementation.md` is now 19/19 checked. Re-validated this
+  checklist too; still passes all items.

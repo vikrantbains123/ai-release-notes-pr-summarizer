@@ -80,17 +80,23 @@ robust and directly testable against FR-016/SC-008).
 
 ## Release Identity matching (FR-011, FR-012, FR-013)
 
-**Decision**: Before publishing, `github_client.py` checks for an existing
-GitHub release whose tag matches the resolved Release Identity's
-version/tag. If found, publishing is skipped and FR-013's message is
+**Decision**: Before publishing, `github_client.py` lists the repository's
+releases (via the list-releases endpoint, which includes drafts) and checks
+client-side for one whose tag matches the resolved Release Identity's
+version — rather than using the tag-specific "get release by tag" endpoint,
+which does not reliably return draft releases (a draft may not yet have its
+tag fully attached until published). If a match of *any* state (draft or
+published) is found, publishing is skipped and FR-013's message is
 reported; the local Markdown file is still written either way (immutability
 applies to the *published release*, not local output — see spec
 Clarifications).
 
-**Rationale**: GitHub releases are already tag-addressed, so checking "does
-a release for this tag exist" via a single GitHub API lookup is the natural,
-minimal implementation of FR-012's immutability rule — no extra metadata
-storage needed beyond what GitHub already tracks.
+**Rationale**: FR-012 (per the pre-implementation checklist review) treats a
+matching draft as "already existing," same as a published release — so the
+matching check must actually see drafts, which the tag-specific lookup
+endpoint doesn't reliably do. Listing releases and filtering client-side by
+`version` is a small extra step but is the only approach that satisfies the
+requirement as written.
 
 **Alternatives considered**: Embedding a hidden marker in the release body
 to detect prior publication (rejected — GitHub's own tag uniqueness already
@@ -105,7 +111,10 @@ API response to compute `estimated_cost_usd`.
 
 **Rationale**: Directly satisfies FR-007 and the constitution's Cost
 Transparency principle using only data the SDK already returns; no external
-pricing lookup/service call needed.
+pricing lookup/service call needed. Per spec Assumptions, the table is
+maintained manually by the developer (no automated staleness detection in
+v1) and `estimated_cost_usd` is computed and stored at 6 decimal places of
+precision (data-model.md), displayed to the user rounded to 4.
 
 **Alternatives considered**: Calling an external pricing API at runtime
 (rejected — adds a network dependency and failure mode for a number that

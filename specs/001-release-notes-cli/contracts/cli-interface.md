@@ -9,7 +9,7 @@ changing this contract's meaning.
 ## Command
 
 ```text
-ai-release-notes --repo <owner/name> [window options] [output options] [--publish]
+ai-release-notes --repo <owner/name> [window options] [output options] [publish options]
 ```
 
 ## Window options (mutually exclusive; FR-001, FR-015)
@@ -22,13 +22,29 @@ ai-release-notes --repo <owner/name> [window options] [output options] [--publis
 
 Supplying both a date range and a ref pair is a usage error (exit code 2,
 message naming the conflict) — resolved before any network call is made.
+Supplying only one of `--from-ref`/`--to-ref` (not both) is likewise a usage
+error (exit code 2), for the same reason: an incomplete window can't be
+resolved.
 
 ## Output options
 
 | Flag | Required | Default | Notes |
 |---|---|---|---|
 | `--output <path>` | No | `RELEASE_NOTES.md` | Destination for the local Markdown file (FR-004, FR-010) |
-| `--publish` | No | off | Opt-in to also publish as a GitHub Release (FR-005) |
+
+## Publish options (FR-005, FR-019)
+
+| Flag | Required | Notes |
+|---|---|---|
+| `--publish` | No | Opt-in to also publish as a GitHub Release (FR-005); off by default |
+| `--version <str>` | Only when `--publish` is used | The Release Identity's matching key (FR-012); its absence when `--publish` is given is a usage error (exit code 2) |
+| `--release-name <str>` | Only when `--publish` is used | Human-readable name shown in the document header; its absence when `--publish` is given is a usage error (exit code 2) |
+| `--rc-branch <str>` | No | Optional RC branch name shown in the header; may be omitted regardless of `--publish` |
+
+`--version`/`--release-name` are validated (present when `--publish` is
+given) before any network call is made — same usage-error treatment as the
+window-option conflicts above. The commit SHA shown in the header is never
+a flag — it is always auto-resolved from the window's end reference/commit.
 
 ## Exit codes
 
@@ -36,15 +52,19 @@ message naming the conflict) — resolved before any network call is made.
 |---|---|
 | 0 | Success — includes the "no PRs found" case (FR-006) and the "notes already exist, skipped" case (FR-013); both are successful, reported outcomes, not errors |
 | 1 | Runtime failure: invalid/missing credentials (FR-008), AI call failed after retries (FR-014), PR volume exceeds the 300-PR cap (FR-017), invalid ref (User Story 2 Acceptance Scenario 2), or generation succeeded but `--publish` failed (FR-018) — this last cause is reported distinctly from the others (see File output contract below) |
-| 2 | Usage error: conflicting/invalid CLI arguments |
+| 2 | Usage error: conflicting/invalid CLI arguments — both date and ref options given, only one of `--from-ref`/`--to-ref` given, or `--publish` given without `--version`/`--release-name` |
 
 ## Stdout/stderr contract
 
 - Human-readable progress and the final cost summary (FR-007) go to **stdout**.
 - Errors (exit codes 1 and 2) go to **stderr** with a clear, actionable
-  message (FR-008) — never a raw stack trace as the only output.
+  message (FR-008) — never a raw stack trace as the only output. Exit code 1
+  intentionally covers several distinct causes with one code, distinguished
+  only by message text — sufficient for a manually-run CLI tool with no
+  scripted/machine consumer of the exit code in v1.
 - No credential value ever appears in stdout, stderr, or the generated file
-  (FR-009).
+  (FR-009) — except a masked partial representation (e.g. last 4 characters),
+  which is not considered exposure.
 
 ## File output contract
 

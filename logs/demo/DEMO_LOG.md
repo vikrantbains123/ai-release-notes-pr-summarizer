@@ -487,3 +487,86 @@ task is actually implemented, cross-linked from
 this new file tracks it per-task, for this one feature).
 
 Still haven't started `/speckit-implement` — no code exists yet.
+
+## 2026-09-12, ~22:45-23:03 PDT — Running /speckit-implement, hitting the checklist gate
+
+Invoked `/speckit-implement`, scoped to Setup only for now. The workflow's
+first real step is a checklist gate: it scans every file in `checklists/`,
+counts checked vs. unchecked items, and — if anything is unchecked — must
+stop and ask before writing any code. Found:
+
+| Checklist | Total | Checked | Unchecked | Status |
+|---|---|---|---|---|
+| requirements.md | 16 | 16 | 0 | PASS |
+| pre-implementation.md | 19 | 3 | 16 | FAIL |
+
+Asked whether to proceed with Setup anyway (harmless scaffolding, none of
+the 16 open items relate to it) or review everything first. Chose the
+latter — review all 16 before writing *any* code, including Setup.
+
+Went through all 16. Two were real design decisions, asked directly:
+
+1. **Draft releases** — does a draft (not yet published) release for a
+   version/tag count as "already exists" for the immutability check?
+   Decided: yes, any state (draft or published) counts — safer, avoids
+   silently clobbering a draft someone's still hand-editing.
+2. **Release Identity population** — only `version` had a clear source
+   before. Decided: explicit CLI flags for all of `--version`,
+   `--release-name`, `--rc-branch` (required when `--publish` is used,
+   except `--rc-branch` which stays optional); `commit_sha` is always
+   auto-resolved, never a flag. This became **FR-019** — the first new
+   functional requirement added *during* implementation, not planning.
+
+The other 14 were either already adequate (6 — just marked reviewed) or a
+small, obvious fix (8): distinct "missing" vs. "invalid" credential error
+wording (FR-008), explicit non-exposure carve-out for masked/partial
+credential display (FR-009), manual pricing-table-maintenance assumption
+(no auto staleness detection), 6-decimal storage / 4-decimal display
+precision for cost, an accepted-non-determinism note for the local file's
+wording across runs, the lone-`--from-ref`-without-`--to-ref` usage error,
+and the PR-cap error message naming the actual count alongside the 300 cap.
+
+One technical wrinkle surfaced along the way: GitHub's "get release by
+tag" endpoint doesn't reliably return **draft** releases, so once we
+decided drafts should count as "existing," `research.md`'s Release
+Identity matching decision had to change too — from a single tag lookup to
+listing all releases and filtering client-side by version. Updated
+`research.md`, `data-model.md` (added a Source column to Release Identity,
+a precision rule to Usage Record), `contracts/cli-interface.md` (new
+Publish options section, lone-ref and missing-flag usage errors), and the
+relevant `tasks.md` entries (T005/T006, T011/T012, T013/T014, T017/T018,
+T026/T027, T028-T031) to match.
+
+`pre-implementation.md` is now 19/19 checked — the gate should pass
+cleanly next time `/speckit-implement` runs. Genuinely useful that this
+gate existed: FR-019 wouldn't have surfaced without it, and it would have
+been a much more awkward mid-implementation surprise (new required CLI
+flags after `cli.py` already existed) instead of a clean addition now.
+
+Not yet committed. Setup (T001-T003) itself hasn't started yet — this
+whole round was the checklist review that had to happen first.
+
+## 2026-09-12, 23:09 PDT — Setup phase (T001-T003): first code in the repo
+
+With the checklist gate cleared, implemented Phase 1 (Setup) — pure
+scaffolding, no logic yet:
+
+- **T001**: `src/ai_release_notes/__init__.py` (empty package marker) and
+  the three test directories (`tests/unit/`, `tests/integration/`,
+  `tests/contract/`), per plan.md's Project Structure.
+- **T002**: `pyproject.toml` — project metadata, `ai-release-notes` console
+  script → `ai_release_notes.cli:main` (that module doesn't exist yet;
+  fine, it's just declared, not invoked, until T022), runtime deps
+  (`anthropic`, `requests`, `python-dotenv`), dev dep (`pytest`), using
+  `hatchling` as the build backend for a `src/` layout.
+- **T003**: `.env.example` documenting `GITHUB_TOKEN`/`ANTHROPIC_API_KEY`
+  (names only). Confirmed it isn't accidentally caught by `.gitignore`'s
+  `.env` rule (`git check-ignore` — exact-name match only, `.env.example`
+  is a different filename).
+
+Sanity-checked `pyproject.toml` parses as valid TOML. Marked T001-T003
+`[X]` in tasks.md. This is the first actual source code in the repo —
+everything before this was documentation/specs.
+
+Next: Phase 2 (Foundational) — the first real logic and the first tests,
+starting with `config.py`.
