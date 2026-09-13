@@ -5,8 +5,11 @@ import pytest
 
 from ai_release_notes.github_client import (
     GitHubClientError,
+    InvalidRefError,
     PullRequestCapExceededError,
     fetch_merged_prs,
+    get_default_branch_head_sha,
+    resolve_ref,
 )
 from ai_release_notes.window import resolve_window
 
@@ -79,6 +82,40 @@ def test_fetch_merged_prs_raises_when_cap_exceeded(mock_requests):
 
     assert "301" in str(exc_info.value)
     assert "300" in str(exc_info.value)
+
+
+def test_get_default_branch_head_sha_resolves_via_repo_and_branch_lookup(mock_requests):
+    mock_requests.get.side_effect = [
+        _response({"default_branch": "main"}),
+        _response({"sha": "deadbeef"}),
+    ]
+
+    sha = get_default_branch_head_sha("owner/repo", token="ghp_faketoken")
+
+    assert sha == "deadbeef"
+
+
+def test_resolve_ref_returns_sha_and_commit_date(mock_requests):
+    mock_requests.get.return_value = _response(
+        {
+            "sha": "abc123",
+            "commit": {"committer": {"date": "2026-08-01T00:00:00Z"}},
+        }
+    )
+
+    sha, committed_at = resolve_ref("owner/repo", "v1.2.0", token="ghp_faketoken")
+
+    assert sha == "abc123"
+    assert committed_at == datetime(2026, 8, 1, tzinfo=timezone.utc)
+
+
+def test_resolve_ref_raises_invalid_ref_error_for_nonexistent_ref(mock_requests):
+    mock_requests.get.return_value = _response({"message": "Not Found"}, status_code=404)
+
+    with pytest.raises(InvalidRefError) as exc_info:
+        resolve_ref("owner/repo", "does-not-exist", token="ghp_faketoken")
+
+    assert "does-not-exist" in str(exc_info.value)
 
 
 def test_fetch_merged_prs_scrubs_token_from_error_message(mock_requests):

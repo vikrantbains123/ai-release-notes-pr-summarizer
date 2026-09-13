@@ -72,6 +72,18 @@ def resolve_window(
     return TimeWindow(kind=WindowKind.DEFAULT, resolved_start=resolved_start, resolved_end=resolved_end)
 
 
+def derive_identity_string(window: TimeWindow) -> str:
+    """Builds a default version/release-name string from the window, used
+    (FR-019) when the user hasn't supplied --version/--release-name and
+    isn't publishing.
+    """
+    if window.kind == WindowKind.REFS:
+        return f"{window.start_ref}_to_{window.end_ref}"
+    if window.kind == WindowKind.DATES:
+        return f"{window.start.isoformat()}_to_{window.end.isoformat()}"
+    return f"{window.resolved_start.date().isoformat()}_to_{window.resolved_end.date().isoformat()}"
+
+
 def apply_resolved_refs(window: TimeWindow, resolved_start: datetime, resolved_end: datetime) -> TimeWindow:
     """Fills in resolved_start/resolved_end for a `refs`-kind window, once
     the caller has resolved both refs to commit dates via GitHub (US2).

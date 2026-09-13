@@ -37,14 +37,16 @@ resolved.
 | Flag | Required | Notes |
 |---|---|---|
 | `--publish` | No | Opt-in to also publish as a GitHub Release (FR-005); off by default |
-| `--version <str>` | Only when `--publish` is used | The Release Identity's matching key (FR-012); its absence when `--publish` is given is a usage error (exit code 2) |
-| `--release-name <str>` | Only when `--publish` is used | Human-readable name shown in the document header; its absence when `--publish` is given is a usage error (exit code 2) |
-| `--rc-branch <str>` | No | Optional RC branch name shown in the header; may be omitted regardless of `--publish` |
+| `--version <str>` | Only when `--publish` is used | The Release Identity's matching key (FR-012); its absence when `--publish` is given is a usage error (exit code 2). When `--publish` is *not* used and this flag is omitted, it's auto-derived from the resolved window (FR-019) |
+| `--release-name <str>` | Only when `--publish` is used | Human-readable name shown in the document header; its absence when `--publish` is given is a usage error (exit code 2). Same auto-derive fallback as `--version` when not publishing |
+| `--rc-branch <str>` | No | Optional RC branch name shown in the header; may be omitted regardless of `--publish` — no auto-derived fallback, stays blank |
 
 `--version`/`--release-name` are validated (present when `--publish` is
 given) before any network call is made — same usage-error treatment as the
-window-option conflicts above. The commit SHA shown in the header is never
-a flag — it is always auto-resolved from the window's end reference/commit.
+window-option conflicts above. Outside of `--publish`, omitting them is not
+an error — FR-019's auto-derivation fills the header instead. The commit
+SHA shown in the header is never a flag — it is always auto-resolved from
+the window's end reference/commit.
 
 ## Exit codes
 

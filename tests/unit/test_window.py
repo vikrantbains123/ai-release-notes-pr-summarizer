@@ -6,6 +6,7 @@ from ai_release_notes.window import (
     WindowError,
     WindowKind,
     apply_resolved_refs,
+    derive_identity_string,
     resolve_window,
 )
 
@@ -74,3 +75,19 @@ def test_apply_resolved_refs_rejects_end_before_start():
 
     with pytest.raises(WindowError):
         apply_resolved_refs(window, resolved_start=start, resolved_end=end)
+
+
+def test_derive_identity_string_for_dates():
+    window = resolve_window(since=date(2026, 8, 1), until=date(2026, 8, 31))
+    assert derive_identity_string(window) == "2026-08-01_to_2026-08-31"
+
+
+def test_derive_identity_string_for_refs():
+    window = resolve_window(from_ref="v1.2.0", to_ref="v1.3.0")
+    assert derive_identity_string(window) == "v1.2.0_to_v1.3.0"
+
+
+def test_derive_identity_string_for_default():
+    now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+    window = resolve_window(now=now)
+    assert derive_identity_string(window) == "2026-08-13_to_2026-09-12"

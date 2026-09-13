@@ -48,10 +48,10 @@ Identifies a specific release for header metadata and re-run detection
 
 | Field | Type | Notes | Source |
 |---|---|---|---|
-| `release_name` | str | Human-readable name shown in the document header | Explicit user input: `--release-name` (required when `--publish` is used, FR-019) |
-| `version` | str | The version/tag used as the matching key (FR-012) | Explicit user input: `--version` (required when `--publish` is used, FR-019) |
+| `release_name` | str | Human-readable name shown in the document header | Explicit user input `--release-name` (required when `--publish` is used); otherwise auto-derived from the resolved Time Window (FR-019) |
+| `version` | str | The version/tag used as the matching key (FR-012) | Explicit user input `--version` (required when `--publish` is used); otherwise auto-derived from the resolved Time Window, e.g. `2026-08-01_to_2026-08-31` or `v1.2.0_to_v1.3.0` (FR-019) |
 | `rc_branch` | str \| None | Release-candidate branch name, if applicable to how the window was specified | Explicit user input: `--rc-branch` (optional, may be omitted) |
-| `commit_sha` | str | The commit the notes were generated from | Always auto-resolved from the Time Window's `resolved_end`/end ref — never user-supplied |
+| `commit_sha` | str | The commit the notes were generated from | Always auto-resolved, never user-supplied: for a `refs`-kind window, the resolved `end_ref`'s commit; for `dates`/`default`, the repository's current default-branch HEAD at run time (`github_client.get_default_branch_head_sha`) |
 
 **Validation**:
 - `version` is the sole identity/matching key — two runs with the same

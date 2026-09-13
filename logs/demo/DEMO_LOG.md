@@ -631,3 +631,95 @@ module every user story needs is built and independently tested.
 
 Next: Phase 3 (User Story 1 / MVP) — `summarizer.py` and wiring it all
 together into `cli.py`.
+
+## 2026-09-13, 12:08 PDT — Phase 3 (User Story 1 / MVP) — T019-T023, working end-to-end tool
+
+Built `summarizer.py` and `cli.py`, wiring every Foundational module into
+an actual runnable tool. 51 tests passing total (11 new). Along the way,
+implementation surfaced a real spec gap that hadn't come up during
+planning or the checklist review — paused and asked before guessing:
+
+**The gap**: FR-011 requires a header on *every* generated document, but
+FR-019 (added just yesterday, during the checklist review) only requires
+`--version`/`--release-name` when `--publish` is used. So what populates
+the header on a plain run, with no `--publish` and no `--version` typed?
+Decided: auto-derive both from the resolved window (e.g.
+`2026-08-01_to_2026-08-31`) when not publishing — keeps the MVP usable
+with zero extra flags, while `--publish` still gets the fully explicit
+behavior decided yesterday. Added a new `window.derive_identity_string()`
+function (test-first) and amended FR-019 + data-model.md + the CLI
+contract to match. This is exactly the kind of thing `/speckit-analyze`
+and the checklist are meant to catch, but didn't — some gaps only surface
+once you actually try to wire the pieces together.
+
+A second, smaller gap surfaced right after: FR-011's `commit_sha` was
+specified as "auto-resolved from the window's end reference," which only
+makes sense for a *ref-based* window (US2) — a plain date-range run has no
+ref to resolve. Didn't re-ask for this one since the answer was
+unambiguous given already-decided principles: added
+`github_client.get_default_branch_head_sha()` (test-first, 2 more GitHub
+calls: repo info → default branch → its HEAD SHA) so a date-range run's
+header always has a real, meaningful commit SHA — "the current state of
+the repo when the notes were generated," which is what FR-011 was
+actually going for.
+
+Built:
+
+- **T019/T020** — `summarizer.py`: builds a prompt asking Claude to
+  classify each PR by number into Features/Improvements/Fixes/Internal,
+  parses the JSON response, and — defensively — any PR number the model
+  doesn't mention (or hallucinates) falls back to the internal section
+  rather than being silently dropped. Retry loop matches FR-014 exactly:
+  3 attempts, 2s/4s backoff, both verified with fake (non-sleeping) sleep
+  functions in tests so the suite stays fast.
+- **T021/T022** — `cli.py`: the full pipeline — config → window →
+  history-filter → fetch PRs → resolve commit SHA → build header →
+  summarize → render → write file → print/record cost. Confirmed via a
+  contract test that a zero-PR window skips the AI call entirely (saves
+  real money, not just a UX nicety) and writes no file.
+- **T023** — history recording, wired directly into the end of `cli.py`'s
+  successful-run path.
+
+Also smoke-tested the actual console script (`ai-release-notes --help`)
+after reinstalling the package, to confirm the entry point genuinely
+resolves now that `cli.py` exists.
+
+Marked T019-T023 `[X]`. **User Story 1 — the MVP — is functionally
+complete**: a real date-range run, with cost reporting and dedup, works
+end-to-end against mocks. Not yet committed.
+
+Next: Phase 4 (User Story 2 — ref/tag ranges) or Phase 5 (User Story 3 —
+publish), whichever you want first; both are independent of each other,
+only extending US1's `cli.py`.
+
+## 2026-09-13, 16:12 PDT — Phase 4 (User Story 2 — ref/tag ranges): T024-T027
+
+Extended `github_client.py` and `cli.py` to accept `--from-ref`/`--to-ref`
+instead of dates. 57 tests passing total (6 new).
+
+- **T024/T025** — `resolve_ref(repo, ref, token)`: hits GitHub's
+  `/repos/{repo}/commits/{ref}` endpoint, returns the commit SHA and
+  commit date. A 404 is checked explicitly (not just any HTTP error) so it
+  can raise a distinct `InvalidRefError` naming the bad ref — a generic
+  network error and "this ref doesn't exist" needed to stay
+  distinguishable.
+- **T026/T027** — extended `cli.py`. Turned out `window.resolve_window()`
+  (built back in Foundational) already validated "both refs must be given
+  together" for free — no new validation code needed there, just passing
+  the new args through. Added the two-step resolution flow: resolve both
+  refs → `window.apply_resolved_refs()` fills in the actual date boundary
+  → then `fetch_merged_prs` runs against that boundary same as before.
+  The header's commit SHA for a ref-based run is the `--to-ref`'s own
+  resolved commit (more meaningful than the previous default-branch-HEAD
+  fallback, which only makes sense when there's no ref to point to).
+
+Small drive-by improvement: the `UsageRecord`'s `since`/`until` fields
+used to come straight from `args.since`/`args.until`, which are `None`
+for a ref-based run. Switched to `window.resolved_start`/`resolved_end`
+instead — correct for both window kinds, not just dates.
+
+Marked T024-T027 `[X]`. **User Story 2 is functionally complete** — same
+categorized output, now reachable via tags/branches instead of dates, and
+an invalid ref fails clearly rather than confusingly. Not yet committed.
+
+Next: Phase 5 (User Story 3 — publish), the only remaining user story.
