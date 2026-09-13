@@ -1,0 +1,23 @@
+[project]
+name = "ai-release-notes"
+version = "0.1.0"
+description = "Generate AI-written, customer-facing release notes and PR summaries for a GitHub repository over a given time window."
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic",
+    "requests",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+ai-release-notes = "ai_release_notes.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_release_notes"]
