@@ -456,3 +456,34 @@ Asked for and got approval to apply all 7 fixes. Applied:
 All artifacts should now be internally consistent. Next step:
 `/speckit-implement` — this is the one where actual code finally gets
 written.
+
+## 2026-09-12, ~19:59-20:13 PDT — Committing everything and adding a per-task cost log
+
+Committed and pushed all spec-driven artifacts from `/speckit-specify`
+through `/speckit-analyze` in one commit (`1e112b6`) — spec.md, plan.md,
+research.md, data-model.md, contracts/, quickstart.md, tasks.md, and both
+checklists. This closed out the entire pre-code portion of Spec Kit.
+
+Then built a task-by-task implementation table (order, phase, user story,
+task ID, description, and exact file(s) touched) from tasks.md, to make the
+build sequence concrete before `/speckit-implement` runs. While reviewing
+plan.md to explain it in detail, caught and fixed one small staleness bug
+of my own: plan.md's Scale/Scope line still said "a few hundred" PRs
+instead of the concrete 300 landed on during the `/speckit-analyze`
+remediation — a reminder that even a "final" artifact needs a re-read
+before trusting it.
+
+Considered adding a Tokens/Est. Cost column to that table directly inside
+`.claude/skills/speckit-plan/SKILL.md` (as first suggested) — decided
+against it: that file is Spec Kit's own reusable command definition,
+shared across every future feature, and could be silently overwritten by
+a future `specify` upgrade. Cost tracking is per-project, per-run state;
+mixing it into a generic skill file would conflate two very different
+kinds of content. Landed instead on a new file,
+`specs/001-release-notes-cli/implementation-log.md` — the same 34-row
+table, extended with blank Tokens/Est. Cost columns to fill in as each
+task is actually implemented, cross-linked from
+`logs/cost/build/BUILD_LOG.md` (which tracks cost at the milestone level;
+this new file tracks it per-task, for this one feature).
+
+Still haven't started `/speckit-implement` — no code exists yet.

@@ -54,8 +54,8 @@ runtime (per spec Assumptions) — not offline-capable. No hard memory/latency
 budget beyond "usable interactively for a single maintainer."
 
 **Scale/Scope**: Single repository, single time window, single user per run.
-Soft cap of a few hundred pull requests per window (FR-017); exceeding it is
-a reported error, not silent truncation or multi-call batching.
+Soft cap of 300 pull requests per window (FR-017); exceeding it is a
+reported error, not silent truncation or multi-call batching.
 
 ## Constitution Check
 

@@ -8,6 +8,10 @@ Claude Code doesn't expose session cost to the assistant programmatically, so
 these entries are recorded manually: run `/cost` in the Claude Code terminal
 at a milestone and log the numbers it reports here.
 
+For a task-by-task cost breakdown of implementing a specific feature (rather
+than project-wide milestones), see that feature's `implementation-log.md` —
+e.g. [specs/001-release-notes-cli/implementation-log.md](../../../specs/001-release-notes-cli/implementation-log.md).
+
 ## How to log an entry
 
 1. Run `/cost` in the terminal.
