@@ -221,6 +221,10 @@ __marimo__/
 # (the format doc at logs/cost/runs/README.md stays tracked)
 logs/cost/runs/usage_log.jsonl
 
+# AI Release Notes / PR Summarizer: local dedup history (runtime state,
+# per-machine, per-repo -- not something to commit)
+.ai-release-notes/
+
 # Claude Code local settings (may contain machine-local permission state) —
 # .claude/skills/ (the Spec Kit commands) stays tracked
 .claude/settings.local.json

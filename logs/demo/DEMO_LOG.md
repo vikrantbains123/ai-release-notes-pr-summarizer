@@ -570,3 +570,64 @@ everything before this was documentation/specs.
 
 Next: Phase 2 (Foundational) — the first real logic and the first tests,
 starting with `config.py`.
+
+## 2026-09-13, 08:02 PDT — Phase 2 (Foundational): T004-T018, all in one pass
+
+Set up a real virtual environment (`uv venv .venv`, `uv pip install -e ".[dev]"`)
+so TDD could be genuine — every module below was: write the test, run pytest
+and confirm a real failure (red), implement, run pytest and confirm a real
+pass (green), not just "write files and assume."
+
+Built, in order, following strict red-green TDD:
+
+- **T004**: `tests/conftest.py` — `mock_requests` (patches `requests.get`/
+  `.post`) and `mock_anthropic_client` (patches `anthropic.Anthropic`)
+  fixtures, so nothing in the suite ever touches the network.
+- **T005/T006**: `config.py` — loads `GITHUB_TOKEN`/`ANTHROPIC_API_KEY` via
+  `python-dotenv`; a shared `CredentialError` type with two message
+  helpers (`missing_credential_error`, `rejected_credential_error`) so
+  "not set" vs. "rejected" (FR-008) share one error type but distinct
+  wording. Worth noting: config.py itself can only ever detect *missing*
+  credentials — "rejected by the API" can only be discovered later, when
+  github_client.py/summarizer.py actually try to use the credential and
+  get a 401. `rejected_credential_error` exists in config.py now so both
+  call sites format that error identically later.
+- **T007/T008**: `window.py` — resolves dates/refs/default-1-month into a
+  `TimeWindow`. Ref pairs can't be resolved to actual dates without a
+  GitHub call, so `resolve_window()` accepts a `refs`-kind window with
+  `resolved_start`/`resolved_end` left `None`, and a separate
+  `apply_resolved_refs()` fills them in later (once US2 actually resolves
+  the refs) — keeping window.py itself pure/no-I/O as planned.
+- **T009/T010**: `history.py` — a small JSON file (one per... actually one
+  file, keyed by repo) tracking already-reported PR numbers, satisfying
+  FR-016/SC-008.
+- **T011/T012**: `release_identity.py` — `version` is the sole matching
+  key regardless of `rc_branch`/`commit_sha`; raises if `version`,
+  `release_name`, or `commit_sha` is missing (FR-019).
+- **T013/T014**: `cost.py` — static pricing table, `compute_cost` (6-decimal
+  precision), a separate 4-decimal display formatter, `record_usage`
+  appending to `usage_log.jsonl`. Tested directly that the written log
+  line never contains a fake credential value, even with real-looking
+  env vars set — a concrete regression guard for the gap the checklist
+  review (C2) flagged.
+- **T015/T016**: `render.py` — also where `PullRequest` and
+  `GeneratedSummary` got defined, since render.py is built before
+  github_client.py in the task order but both need the same PR shape;
+  github_client.py will import `PullRequest` from here rather than the
+  other way around. Added `validate_no_duplicate_placement` as an
+  explicit, testable enforcement of "every PR in exactly one section."
+- **T017/T018**: `github_client.py`'s PR-fetch path — `fetch_merged_prs`
+  against the GitHub REST API (mocked), filters by the resolved window,
+  enforces the 300-PR cap naming the actual count, and scrubs any
+  credential value out of a propagated error message before it reaches
+  the caller.
+
+Also added `.ai-release-notes/` to `.gitignore` (history.json is local
+runtime state, same reasoning as the cost usage log).
+
+Result: **40 tests, all passing**, zero live network calls anywhere in the
+suite. Marked T004-T018 `[X]` in tasks.md. Foundational is done — every
+module every user story needs is built and independently tested.
+
+Next: Phase 3 (User Story 1 / MVP) — `summarizer.py` and wiring it all
+together into `cli.py`.
