@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AI Release Notes / PR Summarizer: generated runtime cost log
+# (the format doc at logs/cost/runs/README.md stays tracked)
+logs/cost/runs/usage_log.jsonl
+
+# Claude Code local settings (may contain machine-local permission state) —
+# .claude/skills/ (the Spec Kit commands) stays tracked
+.claude/settings.local.json
+
+# Note: the generic `build/` rule above (for Python packaging output) also
+# matches our logs/cost/build/ folder by accident — re-include it explicitly.
+!logs/cost/build/
+!logs/cost/build/**
